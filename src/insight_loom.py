@@ -4,30 +4,50 @@ from datetime import datetime, timedelta
 from typing import List
 
 @dataclass
-class Insight:
-    name: str
-    link: str
-    data: str
+class Project:
+    id: int
+    last_insight_viewed: datetime
+
+@dataclass
+class User:
+    id: int
+    project_id: int
+    last_active: datetime
 
 class InsightLoom:
     def __init__(self):
-        self.insights = []
-        self.last_updated = datetime.now()
+        self.projects = []
+        self.users = []
 
-    def add_insight(self, insight: Insight):
-        self.insights.append(insight)
+    def add_project(self, project: Project):
+        self.projects.append(project)
 
-    def get_top_insights(self) -> List[Insight]:
-        return self.insights[:3]
+    def add_user(self, user: User):
+        self.users.append(user)
 
-    def refresh_insights(self):
-        self.last_updated = datetime.now()
-        # Simulate refreshing insights
-        self.insights = [
-            Insight("Risk Alert", "https://example.com/risk", "High risk detected"),
-            Insight("Opportunity Highlight", "https://example.com/opportunity", "New opportunity found"),
-            Insight("Team Sentiment", "https://example.com/sentiment", "Team sentiment is positive")
-        ]
+    def get_map(self) -> int:
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        active_projects = [project for project in self.projects if project.last_insight_viewed >= thirty_days_ago]
+        return len(active_projects)
 
-    def is_stale(self) -> bool:
-        return datetime.now() - self.last_updated > timedelta(minutes=5)
+    def get_daily_active_users(self) -> int:
+        today = datetime.now()
+        active_users = [user for user in self.users if user.last_active.date() == today.date()]
+        return len(active_users)
+
+    def refresh_data(self, data: dict):
+        self.projects = []
+        self.users = []
+        for project_data in data.get('projects', []):
+            project = Project(
+                id=project_data['id'],
+                last_insight_viewed=datetime.strptime(project_data['last_insight_viewed'], '%Y-%m-%d')
+            )
+            self.add_project(project)
+        for user_data in data.get('users', []):
+            user = User(
+                id=user_data['id'],
+                project_id=user_data['project_id'],
+                last_active=datetime.strptime(user_data['last_active'], '%Y-%m-%d')
+            )
+            self.add_user(user)

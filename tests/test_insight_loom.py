@@ -1,36 +1,51 @@
-from datetime import datetime, timedelta
-from insight_loom import Insight, InsightLoom
+from insight_loom import InsightLoom, Project, User
 import pytest
+from datetime import datetime, timedelta
 
-def test_add_insight():
+def test_get_map():
     insight_loom = InsightLoom()
-    insight = Insight("Test Insight", "https://example.com/test", "Test data")
-    insight_loom.add_insight(insight)
-    assert len(insight_loom.insights) == 1
-    assert insight_loom.insights[0].name == "Test Insight"
+    project1 = Project(1, datetime.now())
+    project2 = Project(2, datetime.now() - timedelta(days=31))
+    insight_loom.add_project(project1)
+    insight_loom.add_project(project2)
+    assert insight_loom.get_map() == 1
 
-def test_get_top_insights():
+def test_get_daily_active_users():
     insight_loom = InsightLoom()
-    insight_loom.add_insight(Insight("Test Insight 1", "https://example.com/test1", "Test data 1"))
-    insight_loom.add_insight(Insight("Test Insight 2", "https://example.com/test2", "Test data 2"))
-    insight_loom.add_insight(Insight("Test Insight 3", "https://example.com/test3", "Test data 3"))
-    top_insights = insight_loom.get_top_insights()
-    assert len(top_insights) == 3
-    assert top_insights[0].name == "Test Insight 1"
-    assert top_insights[1].name == "Test Insight 2"
-    assert top_insights[2].name == "Test Insight 3"
+    user1 = User(1, 1, datetime.now())
+    user2 = User(2, 1, datetime.now() - timedelta(days=1))
+    insight_loom.add_user(user1)
+    insight_loom.add_user(user2)
+    assert insight_loom.get_daily_active_users() == 1
 
-def test_refresh_insights():
+def test_refresh_data():
     insight_loom = InsightLoom()
-    insight_loom.refresh_insights()
-    assert len(insight_loom.insights) == 3
-    assert insight_loom.insights[0].name == "Risk Alert"
-    assert insight_loom.insights[1].name == "Opportunity Highlight"
-    assert insight_loom.insights[2].name == "Team Sentiment"
+    data = {
+        'projects': [
+            {'id': 1, 'last_insight_viewed': '2024-09-16'},
+            {'id': 2, 'last_insight_viewed': '2024-08-16'}
+        ],
+        'users': [
+            {'id': 1, 'project_id': 1, 'last_active': '2024-09-16'},
+            {'id': 2, 'project_id': 1, 'last_active': '2024-09-15'}
+        ]
+    }
+    insight_loom.refresh_data(data)
+    assert len(insight_loom.projects) == 2
+    assert len(insight_loom.users) == 2
 
-def test_is_stale():
+def test_get_map_edge_case():
     insight_loom = InsightLoom()
-    insight_loom.last_updated = datetime.now() - timedelta(minutes=10)
-    assert insight_loom.is_stale() == True
-    insight_loom.last_updated = datetime.now()
-    assert insight_loom.is_stale() == False
+    project1 = Project(1, datetime.now())
+    project2 = Project(2, datetime.now())
+    insight_loom.add_project(project1)
+    insight_loom.add_project(project2)
+    assert insight_loom.get_map() == 2
+
+def test_get_daily_active_users_edge_case():
+    insight_loom = InsightLoom()
+    user1 = User(1, 1, datetime.now())
+    user2 = User(2, 1, datetime.now())
+    insight_loom.add_user(user1)
+    insight_loom.add_user(user2)
+    assert insight_loom.get_daily_active_users() == 2

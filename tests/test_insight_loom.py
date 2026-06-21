@@ -1,51 +1,31 @@
-from insight_loom import InsightLoom, Project, User
 import pytest
-from datetime import datetime, timedelta
+from insight_loom import generate_insight_report, export_report_to_pdf
 
-def test_get_map():
-    insight_loom = InsightLoom()
-    project1 = Project(1, datetime.now())
-    project2 = Project(2, datetime.now() - timedelta(days=31))
-    insight_loom.add_project(project1)
-    insight_loom.add_project(project2)
-    assert insight_loom.get_map() == 1
+def test_generate_insight_report():
+    start_date = "2022-01-01"
+    end_date = "2022-01-31"
+    data_sources = ["source1", "source2"]
+    report = generate_insight_report(start_date, end_date, data_sources)
+    assert len(report.trends) == 3
+    assert len(report.sentiment_shifts) == 2
+    assert len(report.action_recommendations) == 1
 
-def test_get_daily_active_users():
-    insight_loom = InsightLoom()
-    user1 = User(1, 1, datetime.now())
-    user2 = User(2, 1, datetime.now() - timedelta(days=1))
-    insight_loom.add_user(user1)
-    insight_loom.add_user(user2)
-    assert insight_loom.get_daily_active_users() == 1
+def test_export_report_to_pdf():
+    report = generate_insight_report("2022-01-01", "2022-01-31", ["source1", "source2"])
+    pdf_content = export_report_to_pdf(report)
+    assert "Insight Report" in pdf_content
+    assert "Trends:" in pdf_content
+    assert "Sentiment Shifts:" in pdf_content
+    assert "Action Recommendations:" in pdf_content
 
-def test_refresh_data():
-    insight_loom = InsightLoom()
-    data = {
-        'projects': [
-            {'id': 1, 'last_insight_viewed': '2024-09-16'},
-            {'id': 2, 'last_insight_viewed': '2024-08-16'}
-        ],
-        'users': [
-            {'id': 1, 'project_id': 1, 'last_active': '2024-09-16'},
-            {'id': 2, 'project_id': 1, 'last_active': '2024-09-15'}
-        ]
-    }
-    insight_loom.refresh_data(data)
-    assert len(insight_loom.projects) == 2
-    assert len(insight_loom.users) == 2
+def test_generate_insight_report_edge_case():
+    start_date = "2022-02-30"
+    end_date = "2022-01-31"
+    data_sources = ["source1", "source2"]
+    with pytest.raises(ValueError):
+        generate_insight_report(start_date, end_date, data_sources)
 
-def test_get_map_edge_case():
-    insight_loom = InsightLoom()
-    project1 = Project(1, datetime.now())
-    project2 = Project(2, datetime.now())
-    insight_loom.add_project(project1)
-    insight_loom.add_project(project2)
-    assert insight_loom.get_map() == 2
-
-def test_get_daily_active_users_edge_case():
-    insight_loom = InsightLoom()
-    user1 = User(1, 1, datetime.now())
-    user2 = User(2, 1, datetime.now())
-    insight_loom.add_user(user1)
-    insight_loom.add_user(user2)
-    assert insight_loom.get_daily_active_users() == 2
+def test_export_report_to_pdf_edge_case():
+    report = None
+    with pytest.raises(AttributeError):
+        export_report_to_pdf(report)

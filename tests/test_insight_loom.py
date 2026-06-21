@@ -1,31 +1,25 @@
 import pytest
-from insight_loom import generate_insight_report, export_report_to_pdf
+from src.insight_loom import generate_insights, visualize_insights, Insight
 
-def test_generate_insight_report():
-    start_date = "2022-01-01"
-    end_date = "2022-01-31"
-    data_sources = ["source1", "source2"]
-    report = generate_insight_report(start_date, end_date, data_sources)
-    assert len(report.trends) == 3
-    assert len(report.sentiment_shifts) == 2
-    assert len(report.action_recommendations) == 1
+def test_generate_insights():
+    data = [1.0, 2.0, 3.0, 2.0, 1.0]
+    insights = generate_insights(data)
+    assert len(insights) == 4
+    assert insights[0].description == "Increase"
+    assert insights[2].description == "Decrease"
 
-def test_export_report_to_pdf():
-    report = generate_insight_report("2022-01-01", "2022-01-31", ["source1", "source2"])
-    pdf_content = export_report_to_pdf(report)
-    assert "Insight Report" in pdf_content
-    assert "Trends:" in pdf_content
-    assert "Sentiment Shifts:" in pdf_content
-    assert "Action Recommendations:" in pdf_content
+def test_generate_insights_empty():
+    data = []
+    insights = generate_insights(data)
+    assert len(insights) == 0
 
-def test_generate_insight_report_edge_case():
-    start_date = "2022-02-30"
-    end_date = "2022-01-31"
-    data_sources = ["source1", "source2"]
-    with pytest.raises(ValueError):
-        generate_insight_report(start_date, end_date, data_sources)
+def test_visualize_insights():
+    insights = [Insight(0, "Increase", [1.0, 2.0]), Insight(1, "Decrease", [2.0, 1.0])]
+    visualization = visualize_insights(insights)
+    assert "Insight 0: Increase (1.0 -> 2.0)" in visualization
+    assert "Insight 1: Decrease (2.0 -> 1.0)" in visualization
 
-def test_export_report_to_pdf_edge_case():
-    report = None
-    with pytest.raises(AttributeError):
-        export_report_to_pdf(report)
+def test_visualize_insights_empty():
+    insights = []
+    visualization = visualize_insights(insights)
+    assert visualization == ""

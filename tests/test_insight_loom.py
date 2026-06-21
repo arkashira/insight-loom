@@ -1,25 +1,41 @@
+from insight_loom import Insight, InsightLoom
 import pytest
-from src.insight_loom import generate_insights, visualize_insights, Insight
+from datetime import datetime, timedelta
 
-def test_generate_insights():
-    data = [1.0, 2.0, 3.0, 2.0, 1.0]
-    insights = generate_insights(data)
-    assert len(insights) == 4
-    assert insights[0].description == "Increase"
-    assert insights[2].description == "Decrease"
+def test_add_insight():
+    loom = InsightLoom()
+    insight = Insight(1, "Test insight")
+    loom.add_insight(insight)
+    assert len(loom.insights) == 1
 
-def test_generate_insights_empty():
-    data = []
-    insights = generate_insights(data)
-    assert len(insights) == 0
+def test_dismiss_insight():
+    loom = InsightLoom()
+    insight = Insight(1, "Test insight")
+    loom.add_insight(insight)
+    loom.dismiss_insight(1)
+    assert len(loom.insights) == 0
+    assert len(loom.dismissed_insights) == 1
 
-def test_visualize_insights():
-    insights = [Insight(0, "Increase", [1.0, 2.0]), Insight(1, "Decrease", [2.0, 1.0])]
-    visualization = visualize_insights(insights)
-    assert "Insight 0: Increase (1.0 -> 2.0)" in visualization
-    assert "Insight 1: Decrease (2.0 -> 1.0)" in visualization
+def test_snooze_insight():
+    loom = InsightLoom()
+    insight = Insight(1, "Test insight")
+    loom.add_insight(insight)
+    loom.snooze_insight(1)
+    assert loom.insights[0].snoozed_until is not None
 
-def test_visualize_insights_empty():
-    insights = []
-    visualization = visualize_insights(insights)
-    assert visualization == ""
+def test_get_insights():
+    loom = InsightLoom()
+    insight1 = Insight(1, "Test insight 1")
+    insight2 = Insight(2, "Test insight 2")
+    loom.add_insight(insight1)
+    loom.add_insight(insight2)
+    loom.snooze_insight(1)
+    assert len(loom.get_insights()) == 1
+
+def test_get_insights_after_snooze():
+    loom = InsightLoom()
+    insight = Insight(1, "Test insight")
+    loom.add_insight(insight)
+    loom.snooze_insight(1)
+    insight.snoozed_until = datetime.now() - timedelta(hours=1)
+    assert len(loom.get_insights()) == 1
